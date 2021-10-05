@@ -3,11 +3,15 @@ from tkinter.font import BOLD
 import PySimpleGUI as sg
 from tkinter.constants import TRUE
 import os
-import pandas
+import pandas as pd
 from PySimpleGUI.PySimpleGUI import Table, Window
 from pandas.core.frame import DataFrame
-from Enums import Conditions    
-from Dataframes import Dataframe
+from Enums import Conditions
+import DataframeManager
+from numpy import empty
+from typing import Match
+import datetime as dt
+import xlwt
 
 class AppUI: 
    
@@ -15,7 +19,7 @@ class AppUI:
     window = None
     dataframe = DataFrame()
     conditionParameter = Conditions
-    
+
     def __init__(self):
 
         [sg.FileBrowse()]
@@ -40,24 +44,26 @@ class AppUI:
             if event == sg.WIN_CLOSED or event == 'Cancel': # if user closes window or clicks cancel
                 break
             if event == "Submit":
-                self.dataframe = Dataframe(values['Browse'])
+                self.convertToCVS(values['Browse'])
             if event == "Submit0":
                 # Send the selected operator to Conditions enum
                 condition = self.assignEnumValue(values['fac1'])
-                      # Check if the user entered values in the fields
-                if values[1] is '' or values[2] is '':
+                # Check if the user entered values in the fields
+                if values[1] == '' or values[2] == '':
                     self.showErrorWithString('Please complete Column and Query')
-                    break
-                self.dataframe = Dataframe.executeQuery(self.dataframe, values[1], condition, values[2], self.dataframe)
+                    return
+                self.dataframe = self.executeQuery(values[1], condition, values[2], self.dataframe)
                 self.showDataframeTable(self.dataframe)
             if event == "Submit1":
-                self.dataframe = Dataframe.executeQuery(self.dataframe, values['fac2'], values[13], values[14])
+                self.dataframe = self.executeQuery(values[3], values['fac2'], values[4], self.dataframe)
             if event == "Submit2":
-                 self.dataframe = Dataframe.executeQuery(self.dataframe, values['fac3'], values[20], values[21])
+                 self.dataframe = self.executeQuery( values[5], values['fac3'], values[6], self.dataframe)
             if event == "Submit3":
-                self.dataframe = Dataframe.executeQuery(self.dataframe, values['fac4'], values[27], values[28])
+                self.dataframe = self.executeQuery(values[7],values['fac4'], values[8], self.dataframe)
             if event == "Export file":
-                Dataframe.saveFile()
+                xlsWriter = pd.ExcelWriter(r'FilteredFile.xlsx')
+                self.dataframe.to_excel(xlsWriter, sheet_name='FilteredData', index=False)
+                xlsWriter.close()
 
         self.window.close()
     
@@ -73,31 +79,28 @@ class AppUI:
         if value == '<=':
             return Conditions.SMALLER_OR_EQUAL
 
-    def showDataframeTable(self, dataFrame):
-        self.dataframe == dataFrame
-        data = self.dataframe.values.tolist()
+    def showDataframeTable(self, df):
+        if df.empty:
+            self.showErrorWithString("Empty dataframe")
+            return
         
-        # check if the actual iloc has a value
-        if 0 <= self.dataframe.iloc[0].tolist() < len(data):
-            self.showErrorWithString('Índex out of bounds')
-        
-        header_list = self.dataframe.iloc[0].tolist()
-        layout = [[sg.Submit(), sg.Cancel()],
-                [sg.Table(values=data, headings=header_list, display_row_numbers=True, auto_size_columns=False, num_rows=min(25, len(data)))],
-                [sg.Button(button_text="Export resulted df as xlsx file")]]
+        data = df.values.tolist()
+
+        layout = [[sg.Submit(), sg.Cancel()],[sg.Table(values=data, headings=df.columns.tolist(), display_row_numbers=True, auto_size_columns=False, num_rows=min(25, len(data)))],]
+       
         dataframeWindow = sg.Window('Table', layout, grab_anywhere=False)
         while True:
             event, values = dataframeWindow.read()
             if event == sg.WIN_CLOSED or event == 'Cancel': # if user closes window or clicks cancel
                 break
             if event == "Export resulted df as xlsx file":
-             Dataframe.saveFile()   
+             DataframeManager.saveFile()   
         dataframeWindow.close()
     
-    def showError():
+    def showError(self):
         sg.Popup('Opps!', 'Converted file is empty')
 
-    def showSuccessPopup():
+    def showSuccessPopup(self):
         sg.Popup('Now you can enter queries')
 
     def showErrorInDataType():
@@ -105,6 +108,43 @@ class AppUI:
     
     def showErrorWithString(self, s):
         sg.Popup('Error', s)
+
+    def executeQuery(self, column, condition, value, df): 
+        # Check if variable df is empty, if it is populate it
+        if df.empty == True:     
+            try:
+                readFile = pd.read_csv('ConvertedFile.csv', index_col=None)
+            except pd.errors.EmptyDataError:
+                self.showErrorWithString('No file with this name found')
+                return
+
+            self.dataframe = pd.DataFrame(readFile)
+        else:
+            self.dataframe = df
+ 
+        # Check if the send value for  the condition is a Conditions type enum
+        if not isinstance(condition, Conditions):
+                raise TypeError('conditions must be an instance of Conditiond Enum')
+
+        # In case the condition is different than equal be sure the fields are numeric ones otherwise show error
+        if condition!= Conditions.EQUAL:
+                if self.dataframe[column].values.dtype == str or self.dataframe[column].values.dtype == object:
+                    self.showErrorInDataType()
+                    return
+
+
+        return DataframeManager.updateDataframe(self.dataframe, column, value, condition)
+
+    def convertToCVS(self, path):
+        data_xls = pd.read_excel(path, dtype=str, index_col=None)
+        current_date = dt.datetime.now()
+        df = data_xls.to_csv('ConvertedFile.csv', encoding='utf-8', index=False)
+        self.dataframe = pd.read_csv('ConvertedFile.csv', delimiter= ",")
+        
+        if self.dataframe.empty == TRUE :
+            self.showError()
+        else :
+            self.showSuccessPopup()
 
 
 myApp = AppUI()
