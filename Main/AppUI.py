@@ -30,9 +30,6 @@ class AppUI:
                 [sg.HorizontalSeparator(color='Blue')],
                 [sg.Text('There is possible to apply up to 4 conditions, each condition is applyed to the previous dataframe resulted \n (eq. cond1 -> Submit -> df -> Cond 2 -> Submit -> df modified with additional condition -> df1)')], 
                 [sg.Text('Enter 1st column', key='-TEXT1-'), sg.InputText(), sg.Combo(values=['==', '<', '>','>=', '<='], key='fac1', default_value='=='), sg.Text('Enter 1st query'), sg.InputText(), sg.Submit(), sg.Text('Query1', key='QUERY1',text_color='blue')],
-                [sg.Text('Enter 2nd column', key='-TEXT2-'), sg.InputText(), sg.Combo(values=['==', '<', '>','>=', '<='], key='fac2', default_value='=='), sg.Text('Enter 2nd query'), sg.InputText(), sg.Submit(), sg.Text('Query2', key='QUERY2',text_color='blue')],
-                [sg.Text('Enter 3rd column', key='-TEXT3-'), sg.InputText(), sg.Combo(values=['==', '<', '>','>=', '<='], key='fac3', default_value='=='), sg.Text('Enter 3rd query'), sg.InputText(), sg.Submit(), sg.Text('Query3', key='QUERY3',text_color='blue')],
-                [sg.Text('Enter 4th column', key='-TEXT4-'), sg.InputText(), sg.Combo(values=['==', '<', '>','>=', '<='], key='fac4', default_value='=='), sg.Text('Enter 4th query'), sg.InputText(), sg.Submit(), sg.Text('Query4', key='QUERY4',text_color='blue')],
                 [sg.Button(button_text="Export file")],
                 [sg.HorizontalSeparator(color='Blue')],
                 [sg.Text('PLOTTING', font=BOLD)]]
@@ -46,20 +43,7 @@ class AppUI:
             if event == "Submit":
                 self.convertToCVS(values['Browse'])
             if event == "Submit0":
-                # Send the selected operator to Conditions enum
-                condition = self.assignEnumValue(values['fac1'])
-                # Check if the user entered values in the fields
-                if values[1] == '' or values[2] == '':
-                    self.showErrorWithString('Please complete Column and Query')
-                    return
-                self.dataframe = self.executeQuery(values[1], condition, values[2], self.dataframe)
-                self.showDataframeTable(self.dataframe)
-            if event == "Submit1":
-                self.dataframe = self.executeQuery(values[3], values['fac2'], values[4], self.dataframe)
-            if event == "Submit2":
-                 self.dataframe = self.executeQuery( values[5], values['fac3'], values[6], self.dataframe)
-            if event == "Submit3":
-                self.dataframe = self.executeQuery(values[7],values['fac4'], values[8], self.dataframe)
+                self.performEDA(values[1], values[2], values['fac1'])
             if event == "Export file":
                 xlsWriter = pd.ExcelWriter(r'FilteredFile.xlsx')
                 self.dataframe.to_excel(xlsWriter, sheet_name='FilteredData', index=False)
@@ -67,17 +51,14 @@ class AppUI:
 
         self.window.close()
     
-    def assignEnumValue(self, value):
-        if value == '<':
-            return Conditions.SMALLER
-        if value == '>':
-            return Conditions.GREATER
-        if value == '==':
-            return Conditions.EQUAL
-        if value == '>=':
-            return Conditions.GREATER_OR_EQUAL
-        if value == '<=':
-            return Conditions.SMALLER_OR_EQUAL
+    def performEDA(self, value1, value2, condition):
+        # Send the selected operator to Conditions enum
+        condition = DataframeManager.assignEnumValue(condition)
+        if value1 == '' or value2 == '':
+            self.showErrorWithString('Please complete Column and Query')
+            return
+        self.executeQuery(value1, condition, value2, self.dataframe)
+        self.showDataframeTable(self.dataframe)
 
     def showDataframeTable(self, df):
         if df.empty:
@@ -86,7 +67,7 @@ class AppUI:
         
         data = df.values.tolist()
 
-        layout = [[sg.Submit(), sg.Cancel()],[sg.Table(values=data, headings=df.columns.tolist(), display_row_numbers=True, auto_size_columns=False, num_rows=min(25, len(data)))],]
+        layout = [[sg.Button('New query'), sg.Cancel()],[sg.Table(values=data, headings=df.columns.tolist(), display_row_numbers=True, auto_size_columns=False, num_rows=min(25, len(data)))],]
        
         dataframeWindow = sg.Window('Table', layout, grab_anywhere=False)
         while True:
@@ -94,7 +75,10 @@ class AppUI:
             if event == sg.WIN_CLOSED or event == 'Cancel': # if user closes window or clicks cancel
                 break
             if event == "Export resulted df as xlsx file":
-             DataframeManager.saveFile()   
+             DataframeManager.saveFile()
+            if event == "New query":
+                dataframeWindow.close()
+
         dataframeWindow.close()
     
     def showError(self):
@@ -111,7 +95,7 @@ class AppUI:
 
     def executeQuery(self, column, condition, value, df): 
         # Check if variable df is empty, if it is populate it
-        if df.empty == True:     
+        if df.empty == True:   
             try:
                 readFile = pd.read_csv('ConvertedFile.csv', index_col=None)
             except pd.errors.EmptyDataError:
@@ -133,7 +117,7 @@ class AppUI:
                     return
 
 
-        return DataframeManager.updateDataframe(self.dataframe, column, value, condition)
+        self.dataframe = DataframeManager.updateDataframe(self.dataframe, column, value, condition)
 
     def convertToCVS(self, path):
         data_xls = pd.read_excel(path, dtype=str, index_col=None)

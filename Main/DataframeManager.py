@@ -7,7 +7,10 @@ from Enums import Conditions
 def updateDataframe(dataframe, column, value, condition):
        
         if condition == Conditions.EQUAL:
+            if dataframe[column].dtype == str or dataframe[column].dtype == object:
                 df = dataframe[dataframe[column] == value]
+            else:
+                df = dataframe[dataframe[column] > float(value)]
         if condition == Conditions.GREATER:
                 df = dataframe[dataframe[column] > float(value)]
         if condition == Conditions.SMALLER:
@@ -26,3 +29,15 @@ def exists(filename):
     except FileNotFoundError:
         file_exists = False
     return file_exists
+
+def assignEnumValue(value):
+        if value == '<':
+            return Conditions.SMALLER
+        if value == '>':
+            return Conditions.GREATER
+        if value == '==':
+            return Conditions.EQUAL
+        if value == '>=':
+            return Conditions.GREATER_OR_EQUAL
+        if value == '<=':
+            return Conditions.SMALLER_OR_EQUAL
