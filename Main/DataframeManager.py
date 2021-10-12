@@ -5,12 +5,12 @@ from Enums import Conditions
 
    
 def updateDataframe(dataframe, column, value, condition):
-       
+
         if condition == Conditions.EQUAL:
             if dataframe[column].dtype == str or dataframe[column].dtype == object:
                 df = dataframe[dataframe[column] == value]
             else:
-                df = dataframe[dataframe[column] > float(value)]
+                df = dataframe[dataframe[column] == float(value)]
         if condition == Conditions.GREATER:
                 df = dataframe[dataframe[column] > float(value)]
         if condition == Conditions.SMALLER:

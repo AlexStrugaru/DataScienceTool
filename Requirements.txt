@@ -1,2 +1,6 @@
 PySimpleGUI
 pandas
+pyplot
+numpy
+Enums
+tkinter
