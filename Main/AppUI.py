@@ -36,8 +36,8 @@ class AppUI:
                 [sg.Button(button_text="Export file")],
                 [sg.HorizontalSeparator(color='Blue')],
                 [sg.Text('PLOTTING', font=BOLD)],
-                [sg.InputText('X', size=(5, 1)),
-                sg.InputText('Y', size=(5, 1)),
+                [sg.InputText('X', size=(20, 1)),
+                sg.InputText('Y', size=(20, 1)),
                 sg.InputCombo(values=('point', 'line')),
                 sg.InputCombo(values=(matplotlib_colours)),
                 sg.InputCombo(values=(matplotlib_linestyles)),
@@ -60,67 +60,77 @@ class AppUI:
                 self.dataframe.to_excel(xlsWriter, sheet_name='FilteredData', index=False)
                 xlsWriter.close()
             if event == "Plot":
-                # Access the values which were entered and store in lists
-                xAxisLabel = values[4]
-                yAxisLabel = values[5]
-
-                legendLabels   = []
-                xcols          = []
-                ycols          = []
-                cols_to_use    = []
-                plot_type      = []
-                plot_colour    = []
-                plot_line      = []
-                i = 2
-                # Append the column indices to a list for later
-                xcolindex = values[4]
-                i += 1
-                ycolindex = values[5] # index 3
-                # Append the separate x and y column indices to their respective lists. These are used when plotting using Seaborn below
-                xcols.append(xcolindex)
-                ycols.append(ycolindex)
-                # Append both the x and y to a combined list in order to construct the DataFrame object
-                cols_to_use.append([xcolindex, ycolindex])
-                # Append the type of plot [ scatter | line ]
-                i += 1
-                plot_type.append(values[6]) # index 4
-                # Append the colour of the plot
-                i += 1
-                plot_colour.append(values[7]) # index 5
-                # Append the linestyle of the plot
-                i += 1
-                plot_line.append(values[8]) # index 6
-                # Append the user specified legend labels to a list for later
-                i += 1
-                legendLabels.append(values[9]) # index 7
-                i += 1
-
-                fig, ax = plt.subplots(figsize=(4, 4))
-                plot_colour = itertools.cycle(plot_colour)
-                plot_line = itertools.cycle(plot_line)
-                if plot_type[0] == 'point':
-                    ax.scatter(self.dataframe[xcols[0]], self.dataframe[ycols[0]], color=next(plot_colour), s=10, label=r'{}'.format(legendLabels[0]))
-                elif plot_type[0] == 'line':
-                    ax.plot(self.dataframe[xcols[0]], self.dataframe[ycols[0]], color=next(plot_colour), linestyle=next(plot_line), label=r'{}'.format(legendLabels[0]))
-    
-                # Work out the minimum and maximum values in the columns to get the plotting range correct
-                xmin = self.dataframe[xcols[0]].min()
-                xmax = self.dataframe[xcols[0]].max()
-                ymin = self.dataframe[ycols[0]].min()
-                ymax = self.dataframe[ycols[0]].max()
-                # Set axis limits
-                plt.xlim(xmin, None)
-                plt.ylim(ymin, None)
-                # Set the x and y axis labels from the user specified ones above
-                plt.xlabel(r'{}'.format(xAxisLabel))
-                plt.ylabel(r'{}'.format(yAxisLabel))
-                # Show the legend
-                plt.legend()
-
-                # Finally show the plot on screen
-                plt.show() 
-
+                if self.dataframe.empty == TRUE:
+                    try:
+                        self.dataframe = pd.read_csv('ConvertedFile.csv', index_col=None)
+                    except pd.errors.EmptyDataError:
+                        self.showErrorWithString('No file with this name found')
+                        return
+                    self.plotDataframe(values)
+                else:
+                    self.plotDataframe(values)
         self.window.close()
+    
+    def plotDataframe(self, values):
+        # Access the values which were entered and store in lists
+        xAxisLabel = values[4]
+        yAxisLabel = values[5]
+
+        legendLabels   = []
+        xcols          = []
+        ycols          = []
+        cols_to_use    = []
+        plot_type      = []
+        plot_colour    = []
+        plot_line      = []
+        i = 2            
+        # Append the column indices to a list for later
+        xcolindex = values[4]
+        i += 1
+        ycolindex = values[5] # index 3
+        # Append the separate x and y column indices to their respective lists. These are used when plotting using Seaborn below
+        xcols.append(xcolindex)
+        ycols.append(ycolindex)
+        # Append both the x and y to a combined list in order to construct the DataFrame object
+        cols_to_use.append([xcolindex, ycolindex])
+        # Append the type of plot [ scatter | line ]
+        i += 1
+        plot_type.append(values[6]) # index 4
+        # Append the colour of the plot
+        i += 1
+        plot_colour.append(values[7]) # index 5
+        # Append the linestyle of the plot
+        i += 1
+        plot_line.append(values[8]) # index 6
+        # Append the user specified legend labels to a list for later
+        i += 1
+        legendLabels.append(values[9]) # index 7
+        i += 1
+
+        fig, ax = plt.subplots(figsize=(4, 4))
+        plot_colour = itertools.cycle(plot_colour)
+        plot_line = itertools.cycle(plot_line)
+        if plot_type[0] == 'point':
+            ax.scatter(self.dataframe[xcols[0]], self.dataframe[ycols[0]], color=next(plot_colour), s=10, label=r'{}'.format(legendLabels[0]))
+        elif plot_type[0] == 'line':
+            ax.plot(self.dataframe[xcols[0]], self.dataframe[ycols[0]], color=next(plot_colour), linestyle=next(plot_line), label=r'{}'.format(legendLabels[0]))
+    
+        # Work out the minimum and maximum values in the columns to get the plotting range correct
+        xmin = self.dataframe[xcols[0]].min()
+        xmax = self.dataframe[xcols[0]].max()
+        ymin = self.dataframe[ycols[0]].min()
+        ymax = self.dataframe[ycols[0]].max()
+        # Set axis limits
+        plt.xlim(xmin, None)
+        plt.ylim(ymin, None)
+        # Set the x and y axis labels from the user specified ones above
+        plt.xlabel(r'{}'.format(xAxisLabel))
+        plt.ylabel(r'{}'.format(yAxisLabel))
+        # Show the legend
+        plt.legend()
+
+        # Finally show the plot on screen
+        plt.show() 
     
     def performEDA(self, value1, value2, condition):
         # Send the selected operator to Conditions enum
