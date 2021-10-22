@@ -113,7 +113,9 @@ class AppUI:
         if plot_type[0] == 'point':
             ax.scatter(self.dataframe[xcols[0]], self.dataframe[ycols[0]], color=next(plot_colour), s=10, label=r'{}'.format(legendLabels[0]))
         elif plot_type[0] == 'line':
-            ax.plot(self.dataframe[xcols[0]], self.dataframe[ycols[0]], color=next(plot_colour), linestyle=next(plot_line), label=r'{}'.format(legendLabels[0]))
+            ax = plt.gca()
+            for column in self.dataframe.columns:
+                ax.plot(self.dataframe[xcols[0]], self.dataframe[ycols[0]], color=next(plot_colour), linestyle=next(plot_line), label=r'{}'.format(legendLabels[0]), ax=ax)
     
         # Work out the minimum and maximum values in the columns to get the plotting range correct
         xmin = self.dataframe[xcols[0]].min()
@@ -128,7 +130,7 @@ class AppUI:
         plt.ylabel(r'{}'.format(yAxisLabel))
         # Show the legend
         plt.legend()
-
+        plt.grid(True)
         # Finally show the plot on screen
         plt.show() 
     
@@ -204,6 +206,10 @@ class AppUI:
             self.showErrorWithString("There is no column with this name")
 
     def convertToCVS(self, path):
+        if os.path.splitext(path) != ".xlsx" or os.path.splitext(path) != ".xls":
+            self.showErrorWithString("File type should be xlsx or xls")
+            return
+    
         data_xls = pd.read_excel(path, dtype=str, index_col=None)
         current_date = dt.datetime.now()
         df = data_xls.to_csv('ConvertedFile.csv', encoding='utf-8', index=False)
