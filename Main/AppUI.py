@@ -59,7 +59,7 @@ class AppUI:
                 [sg.Text('_'  * 100, size=(100, 1), font=CustomFonts.SUBTITLE)],
                 [sg.Button('Plot', font=CustomFonts.BUTTON)]]
 
-        self.window = sg.Window('Data Science Application', layout, size=(1000,800))
+        self.window = sg.Window('Data Science Application', layout, size=(1500,600))
 
         while True:
             event, values = self.window.read()
@@ -80,13 +80,13 @@ class AppUI:
                     try:
                         if os.path.exists('ConvertedFile.csv'):
                             self.dataframe = pd.read_csv('ConvertedFile.csv', index_col=None)
+                            self.plotDataframe(values)
                         else:
                             self.showErrorWithString('No file found to convert into a dataframe')
                             return
                     except pd.errors.EmptyDataError:
                         self.showErrorWithString('No file found to convert into a dataframe')
                         return
-                    self.plotDataframe(values)
                 else:
                     self.plotDataframe(values)
         self.window.close()
@@ -212,9 +212,9 @@ class AppUI:
                 raise TypeError('conditions must be an instance of Conditiond Enum')
 
         # In case the condition is different than equal be sure the fields are numeric ones otherwise show error
-        if condition!= Conditions.EQUAL:
+        if condition != Conditions.EQUAL:
                 if self.dataframe[column].values.dtype == str or self.dataframe[column].values.dtype == object:
-                    self.showErrorInDataType()
+                    self.showErrorWithString("Column contains different datatype than numeric")
                     return
 
         if column in df.columns:
@@ -223,8 +223,9 @@ class AppUI:
             self.showErrorWithString("There is no column with this name")
 
     def convertToCVS(self, path):
-        if os.path.splitext(path) != ".xlsx" or os.path.splitext(path) != ".xls":
-            self.showErrorWithString("File type should be xlsx or xls")
+        file_name, file_extension = os.path.splitext(path)
+        if file_extension != ".xlsx":
+            self.showErrorWithString("File type should be xlsx")
             return
     
         data_xls = pd.read_excel(path, dtype=str, index_col=None)
