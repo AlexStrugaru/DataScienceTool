@@ -1,3 +1,4 @@
+from tkinter import font
 from tkinter.font import BOLD
 import PySimpleGUI as sg
 from tkinter.constants import TRUE
@@ -11,6 +12,8 @@ from numpy import empty
 from typing import Match
 import matplotlib.pyplot as plt
 import itertools
+
+from Enums import CustomFonts
 
 class AppUI: 
    
@@ -26,31 +29,44 @@ class AppUI:
         matplotlib_colours = ["dodgerblue", "indianred", "gold", "steelblue", "tomato", "slategray", "plum", "seagreen", "gray"]
         # List the line-styles you want
         matplotlib_linestyles = ["solid", "dashed", "dashdot", "dotted"]
-        
+        # pad = ((left, right), (top, bottom))
         sg.theme('LightGrey1')
-        layout = [[sg.Text("Choose a xls file: ", key='-TEXT-'), sg.FileBrowse()],
-                [sg.Submit(), sg.Cancel()], [sg.Text('FILTER DATAFRAME', font=BOLD)],
+        col_layout = [sg.Text("")]
+  
+        layout = [[sg.Text("Choose a xls file: ", key='-TEXT-', font=CustomFonts.TITLE),
+                sg.Input(font=CustomFonts.SUBTITLE, change_submits=True, key = "-IN-"),
+                sg.FileBrowse(font=CustomFonts.BUTTON)],
+                [sg.Submit(font=CustomFonts.BUTTON, pad=((10,20), (10, 40))), sg.Cancel(font=CustomFonts.BUTTON, pad=((0,0), (10, 40)))],
+                [sg.Text('FILTER DATAFRAME', font=CustomFonts.SECTION)],
                 [sg.HorizontalSeparator(color='Blue')],
-                [sg.Text('There is possible to apply up to 4 conditions, each condition is applyed to the previous dataframe resulted \n (eq. cond1 -> Submit -> df -> Cond 2 -> Submit -> df modified with additional condition -> df1)')], 
-                [sg.Text('Enter 1st column', key='-TEXT1-'), sg.InputText(), sg.Combo(values=['==', '<', '>','>=', '<='], key='fac1', default_value='=='), sg.Text('Enter 1st query'), sg.InputText(), sg.Submit(), sg.Text('Query1', key='QUERY1',text_color='blue')],
-                [sg.Button(button_text="Export file")],
+                [sg.Text('There is possible to apply up to 4 conditions, each condition is applyed to the previous dataframe resulted \n (eq. cond1 -> Submit -> df -> Cond 2 -> Submit -> df modified with additional condition -> df1)', font=CustomFonts.SUBTITLE)], 
+                [sg.Text('Enter 1st column', key='-TEXT1-', font=CustomFonts.SUBTITLE), 
+                sg.InputText(font=CustomFonts.SUBTITLE), 
+                sg.Combo(values=['==', '<', '>','>=', '<='], key='fac1', default_value='==', font=CustomFonts.SUBTITLE), 
+                sg.Text('Enter 1st query', font=CustomFonts.SUBTITLE), 
+                sg.InputText(font=CustomFonts.SUBTITLE), 
+                sg.Submit(font=CustomFonts.BUTTON), 
+                sg.Text('Query1', key='QUERY1',text_color='blue', font=CustomFonts.SUBTITLE)],
+                [sg.Button(button_text="Export file", font=CustomFonts.BUTTON)],
                 [sg.HorizontalSeparator(color='Blue')],
-                [sg.Text('PLOTTING', font=BOLD)],
-                [sg.InputText('X', size=(20, 1)),
-                sg.InputText('Y', size=(20, 1)),
-                sg.InputCombo(values=('point', 'line')),
-                sg.InputCombo(values=(matplotlib_colours)),
-                sg.InputCombo(values=(matplotlib_linestyles)),
-                sg.InputText('Enter Legend Label', size=(20, 1))],
-                [sg.Text('_'  * 100, size=(100, 1))],
-                [sg.Button('Plot')]]
+                [sg.Text('PLOTTING', font=CustomFonts.SECTION)],
+                [sg.InputText('X', size=(20, 1),font=CustomFonts.SUBTITLE),
+                sg.InputText('Y', size=(20, 1), font=CustomFonts.SUBTITLE),
+                sg.InputCombo(values=('point', 'line'), font=CustomFonts.SUBTITLE),
+                sg.InputCombo(values=(matplotlib_colours), font=CustomFonts.SUBTITLE),
+                sg.InputCombo(values=(matplotlib_linestyles), font=CustomFonts.SUBTITLE),
+                sg.InputText('Enter Legend Label', size=(20, 1), font=CustomFonts.SUBTITLE)],
+                [sg.Text('_'  * 100, size=(100, 1), font=CustomFonts.SUBTITLE)],
+                [sg.Button('Plot', font=CustomFonts.BUTTON)]]
 
         self.window = sg.Window('Data Science Application', layout, size=(1000,800))
-    
+
         while True:
             event, values = self.window.read()
-            if event == sg.WIN_CLOSED or event == 'Cancel': # if user closes window or clicks cancel
+            if event == sg.WIN_CLOSED: # if user closes window
                 break
+            if event == 'Cancel':
+                self.window['-IN-'].update('')
             if event == "Submit":
                 self.convertToCVS(values['Browse'])
             if event == "Submit0":
@@ -62,9 +78,13 @@ class AppUI:
             if event == "Plot":
                 if self.dataframe.empty == TRUE:
                     try:
-                        self.dataframe = pd.read_csv('ConvertedFile.csv', index_col=None)
+                        if os.path.exists('ConvertedFile.csv'):
+                            self.dataframe = pd.read_csv('ConvertedFile.csv', index_col=None)
+                        else:
+                            self.showErrorWithString('No file found to convert into a dataframe')
+                            return
                     except pd.errors.EmptyDataError:
-                        self.showErrorWithString('No file with this name found')
+                        self.showErrorWithString('No file found to convert into a dataframe')
                         return
                     self.plotDataframe(values)
                 else:
@@ -164,9 +184,6 @@ class AppUI:
 
         dataframeWindow.close()
     
-    def showError(self):
-        sg.Popup('Opps!', 'Converted file is empty')
-
     def showSuccessPopup(self):
         sg.Popup('Now you can enter queries')
 
@@ -174,7 +191,7 @@ class AppUI:
         sg.Popup('Data type of the specified column is not numeric')
     
     def showErrorWithString(self, s):
-        sg.Popup('Error', s)
+        sg.Popup('Error', s, font==CustomFonts.ERROR, keep_on_top=True)
 
     def executeQuery(self, column, condition, value, df): 
         # Check if variable df is empty, if it is populate it
@@ -211,12 +228,11 @@ class AppUI:
             return
     
         data_xls = pd.read_excel(path, dtype=str, index_col=None)
-        current_date = dt.datetime.now()
         df = data_xls.to_csv('ConvertedFile.csv', encoding='utf-8', index=False)
         self.dataframe = pd.read_csv('ConvertedFile.csv', delimiter= ",")
         
         if self.dataframe.empty == TRUE :
-            self.showError()
+            self.showErrorWithString('Opps!', 'Converted file is empty')
         else :
             self.showSuccessPopup()
 
