@@ -16,3 +16,4 @@ Features:
 3. Dataframe filtering
 4. Dataframe dispay
 5. Dataframe plotting
+<img width="1299" alt="Screenshot 2021-10-23 at 09 54 01" src="https://user-images.githubusercontent.com/60607938/138547920-92c0068e-cfcb-4d79-b3b7-07220e76b1ba.png">
