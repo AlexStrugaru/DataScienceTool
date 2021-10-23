@@ -1,7 +1,6 @@
 PySimpleGUI
 pandas
-pyplot
+matplotlib
 numpy
 Enums
-tkinter
 typing
