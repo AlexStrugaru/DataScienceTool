@@ -134,8 +134,10 @@ class AppUI:
             ax.scatter(self.dataframe[xcols[0]], self.dataframe[ycols[0]], color=next(plot_colour), s=10, label=r'{}'.format(legendLabels[0]))
         elif plot_type[0] == 'line':
             ax = plt.gca()
+            fig = plt.figure(figsize=(12, 10), dpi=80)
+            ax = fig.add_subplot(111)
             for column in self.dataframe.columns:
-                ax.plot(self.dataframe[xcols[0]], self.dataframe[ycols[0]], color=next(plot_colour), linestyle=next(plot_line), label=r'{}'.format(legendLabels[0]), ax=ax)
+                ax.plot(self.dataframe[xcols[0]], self.dataframe[ycols[0]], linestyle=next(plot_line), color=next(plot_colour), label=r'{}'.format(legendLabels[0]))
     
         # Work out the minimum and maximum values in the columns to get the plotting range correct
         xmin = self.dataframe[xcols[0]].min()
@@ -143,8 +145,8 @@ class AppUI:
         ymin = self.dataframe[ycols[0]].min()
         ymax = self.dataframe[ycols[0]].max()
         # Set axis limits
-        plt.xlim(xmin, None)
-        plt.ylim(ymin, None)
+        plt.xlim(xmin, 100)
+        plt.ylim(ymin, 100)
         # Set the x and y axis labels from the user specified ones above
         plt.xlabel(r'{}'.format(xAxisLabel))
         plt.ylabel(r'{}'.format(yAxisLabel))
