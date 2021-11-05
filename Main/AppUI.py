@@ -131,12 +131,14 @@ class AppUI:
         plot_colour = itertools.cycle(plot_colour)
         plot_line = itertools.cycle(plot_line)
         if plot_type[0] == 'point':
+            # Check if value is float not string for representation
             ax.scatter(self.dataframe[xcols[0]], self.dataframe[ycols[0]], color=next(plot_colour), s=10, label=r'{}'.format(legendLabels[0]))
         elif plot_type[0] == 'line':
             ax = plt.gca()
             fig = plt.figure(figsize=(12, 10), dpi=80)
             ax = fig.add_subplot(111)
             for column in self.dataframe.columns:
+                # Check if value is float not string for representation
                 ax.plot(self.dataframe[xcols[0]], self.dataframe[ycols[0]], linestyle=next(plot_line), color=next(plot_colour), label=r'{}'.format(legendLabels[0]))
     
         # Work out the minimum and maximum values in the columns to get the plotting range correct
@@ -145,8 +147,8 @@ class AppUI:
         ymin = self.dataframe[ycols[0]].min()
         ymax = self.dataframe[ycols[0]].max()
         # Set axis limits
-        plt.xlim(xmin, 100)
-        plt.ylim(ymin, 100)
+        plt.xlim(xmin, None)
+        plt.ylim(ymin, None)
         # Set the x and y axis labels from the user specified ones above
         plt.xlabel(r'{}'.format(xAxisLabel))
         plt.ylabel(r'{}'.format(yAxisLabel))
